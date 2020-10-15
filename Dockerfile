@@ -1,11 +1,37 @@
-FROM ubuntu:bionic
+FROM ubuntu:20.04
 
 ########################################################
 # Essential packages for remote debugging and login in
 ########################################################
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y \
-    apt-utils gcc g++ openssh-server cmake build-essential gdb gdbserver rsync vim
+ARG DEBIAN_FRONTEND=noninteractive
+
+# add llvm repo
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+        gpg \
+        gpg-agent \
+        wget \
+        software-properties-common \
+        git \
+        curl \
+        python \
+        python3 \
+        python3-pip \
+        python3-setuptools \
+        apt-utils gcc g++ openssh-server build-essential gdb gdbserver rsync vim \
+    && wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
+    add-apt-repository -y "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-10 main" && \
+    add-apt-repository -y ppa:ubuntu-toolchain-r/test \
+    && rm -rf /var/lib/apt/lists/*
+
+# RUN apt-get update && apt-get upgrade -y && apt-get install -y \
+#     apt-utils gcc g++ openssh-server build-essential gdb gdbserver rsync vim python3 python3-pip python3-setuptools
+
+# install cmake and dev dependencies
+RUN python3 -m pip install --no-cache-dir --upgrade pip
+RUN pip3 install --no-cache-dir scikit-build cmake requests gitpython gcovr pyyaml
+RUN pip install requests
 
 ADD . /code
 WORKDIR /code
@@ -32,6 +58,19 @@ RUN echo 'debugger:pwd' | chpasswd
 # Add custom packages and development environment here
 ########################################################
 
-########################################################
+# install rustc
+USER debugger
 
+ENV RUST_VERSION=nightly-2019-07-07
+ENV RUSTUP_HOME="/home/debugger/.rustup"
+ENV CARGO_HOME="/home/debugger/.cargo"
+ENV PATH="${CARGO_HOME}/bin:${PATH}"
+
+RUN whoami
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain ${RUST_VERSION} && \
+    rustup default ${RUST_VERSION}
+
+########################################################
+USER root
+RUN whoami
 CMD ["/usr/sbin/sshd", "-D"]
