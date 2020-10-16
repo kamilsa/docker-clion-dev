@@ -33,6 +33,18 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip
 RUN pip3 install --no-cache-dir scikit-build cmake requests gitpython gcovr pyyaml
 RUN pip install requests
 
+# install rustc
+ENV RUST_VERSION=nightly-2020-08-27
+ENV RUSTUP_HOME="/opt/rust/.rustup"
+ENV CARGO_HOME="/opt/rust/.cargo"
+ENV PATH="${CARGO_HOME}/bin:${PATH}"
+
+RUN whoami
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain ${RUST_VERSION}
+RUN echo "PATH=${PATH}" >> /etc/environment
+RUN echo "RUSTUP_HOME=${RUSTUP_HOME}" >> /etc/environment
+RUN echo "CARGO_HOME=${CARGO_HOME}" >> /etc/environment
+
 ADD . /code
 WORKDIR /code
 
@@ -52,23 +64,13 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 EXPOSE 22 7777
 
 RUN useradd -ms /bin/bash debugger
+RUN chmod ugo+rwx ${RUSTUP_HOME}
+RUN chmod ugo+rwx ${CARGO_HOME}
 RUN echo 'debugger:pwd' | chpasswd
 
 ########################################################
 # Add custom packages and development environment here
 ########################################################
-
-# install rustc
-USER debugger
-
-ENV RUST_VERSION=nightly-2019-07-07
-ENV RUSTUP_HOME="/home/debugger/.rustup"
-ENV CARGO_HOME="/home/debugger/.cargo"
-ENV PATH="${CARGO_HOME}/bin:${PATH}"
-
-RUN whoami
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain ${RUST_VERSION} && \
-    rustup default ${RUST_VERSION}
 
 ########################################################
 USER root
