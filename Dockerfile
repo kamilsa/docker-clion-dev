@@ -20,6 +20,7 @@ RUN apt-get update && \
         python3-pip \
         python3-setuptools \
         apt-utils gcc g++ openssh-server build-essential gdb gdbserver rsync vim \
+    && apt-get upgrade
     && wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
     add-apt-repository -y "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-10 main" && \
     add-apt-repository -y ppa:ubuntu-toolchain-r/test \
