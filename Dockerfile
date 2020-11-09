@@ -41,9 +41,17 @@ ENV PATH="${CARGO_HOME}/bin:${PATH}"
 
 RUN whoami
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain ${RUST_VERSION}
-RUN echo "PATH=${PATH}" >> /etc/environment
 RUN echo "RUSTUP_HOME=${RUSTUP_HOME}" >> /etc/environment
 RUN echo "CARGO_HOME=${CARGO_HOME}" >> /etc/environment
+
+# install go
+ENV GOPATH="/opt/go"
+RUN mkdir ${GOPATH} && wget -c https://dl.google.com/go/go1.14.2.linux-amd64.tar.gz -O - | tar -xz -C /opt
+ENV PATH $GOPATH/bin:$PATH
+RUN echo "GOPATH=${GOPATH}" >> /etc/environment
+
+
+RUN echo "PATH=${PATH}" >> /etc/environment
 
 ADD . /code
 WORKDIR /code
@@ -66,6 +74,7 @@ EXPOSE 22 7777
 RUN useradd -ms /bin/bash debugger
 RUN chmod ugo+rwx ${RUSTUP_HOME}
 RUN chmod ugo+rwx ${CARGO_HOME}
+RUN chmod -R 777 ${GOPATH}
 RUN echo 'debugger:pwd' | chpasswd
 
 ########################################################
